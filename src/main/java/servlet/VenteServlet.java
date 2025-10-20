@@ -74,6 +74,5 @@ public class VenteServlet extends HttpServlet {
         }
     }
 
-    // Pas de /add ici car ton DaoVente n'expose pas encore d'insert.
-    // Quand tu ajouteras DaoVente.ajouterVente(...), on branchera doPost.
+
 }
