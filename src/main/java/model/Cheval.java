@@ -44,17 +44,22 @@ public class Cheval {
     }
 
 	public String getSexe() {
-		// TODO Auto-generated method stub
+		
 		return null;
 	}
 
 	public String getPoids() {
-		// TODO Auto-generated method stub
+	
 		return null;
 	}
 
 	public String getTaille() {
-		// TODO Auto-generated method stub
+		
 		return null;
+	}
+
+	public void setProprietaire(Client proprietaire) {
+	
+		
 	}
 }

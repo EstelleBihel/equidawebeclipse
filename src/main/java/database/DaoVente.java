@@ -48,14 +48,21 @@ public class DaoVente {
     public static ArrayList<Lot> getLesLots(Connection cnx, int idVente) {
         ArrayList<Lot> lesLots = new ArrayList<>();
 
-        String sql = "SELECT " +
-                     "  l.id          AS lot_id, " +
-                     "  l.prix_depart AS lot_prix_depart, " +
-                     "  c.id          AS cheval_id, " +
-                     "  c.nom         AS cheval_nom " +
-                     "FROM lot l " +
-                     "LEFT JOIN cheval c ON l.cheval_id = c.id " +   // adapte le nom de colonne si besoin
-                     "WHERE l.vente_id = ?";
+        String sql = "SELECT "
+                + "  l.id AS lot_id, "
+                + "  l.prixDepart AS lot_prixDepart, "
+                + "  c.id AS cheval_id, "
+                + "  c.nom AS cheval_nom, "
+                + "  cl.id AS client_id, "
+                + "  cl.nom AS client_nom, "
+                + "  cl.prenom AS client_prenom, "
+                + "  cl.ville AS client_ville, "
+                + "  cl.numeroRue AS client_numeroRue, "
+                + "  cl.rue AS client_rue "               
+                + "FROM lot l "
+                + "LEFT JOIN cheval c ON l.cheval_id = c.id "
+                + "LEFT JOIN client cl ON c.proprietaire_id = cl.id "
+                + "WHERE l.vente_id = ?";
 
         try (PreparedStatement requeteSql = cnx.prepareStatement(sql)) {
             requeteSql.setInt(1, idVente);
@@ -64,9 +71,9 @@ public class DaoVente {
                 while (rs.next()) {
                     Lot lot = new Lot();
                     lot.setId(rs.getInt("lot_id"));
-                    lot.setPrixDepart(rs.getInt("lot_prix_depart")); // ta classe stocke un int
+                    lot.setPrixDepart(rs.getInt("lot_prix_depart")); 
 
-                    // Cheval lié (si présent)
+                    // Cheval lié 
                     int chevalId = rs.getInt("cheval_id");
                     if (!rs.wasNull()) {
                         model.Cheval ch = new model.Cheval();
@@ -74,8 +81,22 @@ public class DaoVente {
                         ch.setNom(rs.getString("cheval_nom"));
                         lot.setCheval(ch);
                     }
+                    // Propriétaire lié	
+                    int clientId = rs.getInt("client_id");
+                    if (!rs.wasNull()) {
+						model.Client proprietaire = new model.Client();
+						proprietaire.setId(clientId);
+						proprietaire.setNom(rs.getString("client_nom"));
+						proprietaire.setPrenom(rs.getString("client_prenom"));
+						proprietaire.setVille(rs.getString("client_ville"));
+						proprietaire.setNumeroRue(rs.getInt("client_numeroRue"));
+						proprietaire.setRue(rs.getString("client_rue"));
 
-                    // Optionnel : si tu veux setter la Vente dedans
+						if (lot.getCheval() != null) {
+							lot.getCheval().setProprietaire(proprietaire);
+						}
+					}
+                
                     model.Vente v = new model.Vente();
                     v.setId(idVente);
                     lot.setVente(v);
@@ -125,9 +146,7 @@ public class DaoVente {
 
                     vente.setLieu(lieu);
 
-                    // (Optionnel) Charger les lots de cette vente si ton modèle le prévoit :
-                    // ArrayList<Lot> lots = getLesLots(cnx, idVente);
-                    // vente.setLots(lots);
+               	 // Récupérer et associer les lots à la vente
                 }
             }
         } catch (SQLException e) {
