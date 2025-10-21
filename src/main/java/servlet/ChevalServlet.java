@@ -36,7 +36,7 @@ public class ChevalServlet extends HttpServlet {
             throw new ServletException("Connexion DB absente du contexte (attribut 'cnx').");
         }
 
-        // 2) Normalisation du path
+        // 2) Normalisation du path => liés aux .jsp dans /WEB-INF/views/cheval/
         String path = request.getPathInfo();
         if (path == null || path.isBlank()) path = "/list";
 

@@ -55,7 +55,7 @@ public class DaoCheval {
     }
 
     /**
-     * Récupère un cheval par son identifiant.
+     * Récupère un cheval par son identifiant
      */
     public static Cheval getLeCheval(Connection cnx, int idCheval) {
         if (cnx == null) throw new IllegalArgumentException("Connexion nulle (cnx).");
@@ -76,7 +76,7 @@ public class DaoCheval {
     }
 
     /**
-     * Ajoute un nouveau cheval (remplit l'id auto-généré dans l'objet).
+     * Ajoute un nouveau cheval dans la base de données.
      */
     public static boolean ajouterCheval(Connection cnx, Cheval cheval) {
         if (cnx == null) throw new IllegalArgumentException("Connexion nulle (cnx).");
@@ -118,7 +118,6 @@ public class DaoCheval {
         }
     }
 
-    // ===== Helpers =====
 
     private static Cheval mapCheval(ResultSet rs) throws SQLException {
         Cheval c = new Cheval();

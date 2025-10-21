@@ -50,7 +50,7 @@ public class DaoVente {
 
         String sql = "SELECT "
                 + "  l.id AS lot_id, "
-                + "  l.prixDepart AS lot_prixDepart, "
+                + "  l.prixDepart AS lot_prix_depart, "
                 + "  c.id AS cheval_id, "
                 + "  c.nom AS cheval_nom, "
                 + "  cl.id AS client_id, "
