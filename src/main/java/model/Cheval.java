@@ -9,6 +9,8 @@ public class Cheval {
     private LocalDate dateNaissance;
 
     private Race race;
+  
+    private Client proprietaire;
 
     public Cheval() {
     }
@@ -43,6 +45,14 @@ public class Cheval {
         this.race = race;
     }
 
+    public Client getProprietaire() {
+        return proprietaire;
+    }
+
+    public void setProprietaire(Client proprietaire) {
+        this.proprietaire = proprietaire;
+    }
+
 	public String getSexe() {
 		
 		return null;
@@ -58,8 +68,4 @@ public class Cheval {
 		return null;
 	}
 
-	public void setProprietaire(Client proprietaire) {
-	
-		
-	}
 }

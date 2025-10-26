@@ -1,78 +1,36 @@
 package database;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 public class Connexionbdd {
-    public static Connection connection=null;
-    public static Statement st=null;
-    public static ResultSet rs=null;
-
-    // Méthode de création et d'ouverture de la connexion
-    public static Connection ouvrirConnexion(){
+	// Méthode pour ouvrir une connexion à la base de données MariaDB
+    public static Connection ouvrirConnexion() throws SQLException {
         try {
+            // Charge le driver MariaDB
             Class.forName("org.mariadb.jdbc.Driver");
-            System.out.println("Pilote MARIADB JDBC chargé");
-
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            throw new SQLException("Driver MariaDB introuvable.", e);
         }
-        try {
-            //obtention de la connexion
-            connection= DriverManager.getConnection("jdbc:mariadb://127.0.0.1:3307/equida","root","");
-            System.out.println("Connexion OK");
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return connection ;
+        // Détails de la connexion
+        String url = "jdbc:mariadb://localhost:3307/equida";
+        String user = "root";
+        String password = ""; 
 
+        Connection cnx = DriverManager.getConnection(url, user, password);
+        System.out.println(">>> Connexion BDD ouverte avec succès sur " + url);
+        return cnx;
     }
-
-    // Méthode de fermeture du resultset
-    public static void fermerConnexion(ResultSet rs)
-    {
-        if(rs!=null)
-        {
-            try
-            {
-                rs.close();
-            }
-            catch(Exception e)
-            {
-                System.out.println("Erreur lors de la fermeture d’une connexion dans fermerConnexion(ResultSet)");
-            }
-        }
-    }
-
-    // Méthode de fermeture du statement
-    public static void fermerConnexion(Statement stmt)
-    {
-        if(stmt!=null)
-        {
-            try
-            {
-                stmt.close();
-            }
-            catch(Exception e)
-            {
-                System.out.println("Erreur lors de la fermeture d’une connexion dans fermerConnexion(Statement)");
-            }
-        }
-    }
-
-    /// Méthode de fermeture de la connexion
-    public static void fermerConnexion(Connection con)
-    {
-        if(con!=null)
-        {
-            try
-            {
-                con.close();
-                System.out.println("Fermeture Connexion OK");
-            }
-            catch(Exception e)
-            {
-                System.out.println("Erreur lors de la fermeture d’une connexion dans fermerConnexion(Connection)");
+	// Méthode pour fermer une connexion à la base de données
+    public static void fermerConnexion(Connection cnx) {
+        if (cnx != null) {
+            try {
+                cnx.close();
+                System.out.println(">>> Connexion BDD fermée proprement.");
+            } catch (SQLException e) {
+                System.err.println(">>> Erreur fermeture connexion : " + e.getMessage());
             }
         }
     }

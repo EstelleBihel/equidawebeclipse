@@ -1,55 +1,77 @@
+
 package database;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
-import jakarta.servlet.annotation.WebListener;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-@WebListener
+//classe qui permet de gérer la connexion à la base de données
 public class ConnexionServlet implements ServletContextListener {
 
-    @Override
-    public void contextInitialized(ServletContextEvent event) {
-        ServletContext ctx = event.getServletContext();
-        try {
+    Connection cnx = null;
+    
+    //action qui permet d'initialiser le filtre
+    public void contextInitialized(ServletContextEvent event)
+    {
+        //Initialisation et lecture du  contexte
+        ServletContext servletContext=event.getServletContext();
+        System.out.println("INITCONNEXION" + servletContext.getContextPath());
+        try
+        {
+            //chargement du driver
             Class.forName("org.mariadb.jdbc.Driver");
+            System.out.println("Pilote Mariadb JDBC chargé");
 
-            // On stocke seulement les paramètres
-            ctx.setAttribute("db.url",  "jdbc:mariadb://127.0.0.1:3307/equida?useUnicode=true&characterEncoding=UTF-8");
-            ctx.setAttribute("db.user", "root");
-            ctx.setAttribute("db.pass", "");
+            try
+            {
+                //obtention de la connexion
+                cnx = DriverManager.getConnection("jdbc:mariadb://127.0.0.1:3306/equidaweb","root","");
+                //sauvegarder la connexion dans le context
+                servletContext.setAttribute("connection",cnx);
+                System.out.println("Connexion opérationnelle" + "jdbc:mariadb://127.0.0.1:3306/paris2024");
+            }
+            catch (SQLException e)
+            {
+                e.printStackTrace();
+                System.out.println("Erreur lors de l’établissementde la connexion");
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            e.printStackTrace();
+            System.out.println("Erreur lors du chargemement du pilote");
+        }
 
-            System.out.println("✅ Paramètres DB chargés (port 3307).");
-        } catch (Exception e) {
-            System.err.println("❌ Erreur init DB : " + e.getMessage());
+
+    }
+
+    //action qui permet de détruire le filtre
+    public void contextDestroyed(ServletContextEvent event)
+    {
+        System.out.println("----------- Contexte détruit -----------");
+        try
+        {
+            //fermeture
+            System.out.println("Connexion fermée");
+        }
+        catch (Exception e)
+        {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void contextDestroyed(ServletContextEvent event) {
-        System.out.println("Contexte détruit.");
-        try {
-            java.sql.Driver driver = DriverManager.getDriver("jdbc:mariadb://127.0.0.1:3307/equida");
-            DriverManager.deregisterDriver(driver);
-        } catch (SQLException ignore) {}
-    }
-
-    /** Getter pratique : renvoie une connexion OUVERTE ; rouvre si besoin. */
-    public static Connection getConnection(ServletContext ctx) throws SQLException {
-        Connection cnx = (Connection) ctx.getAttribute("db.cnx");
-        if (cnx != null && !cnx.isClosed()) return cnx;
-
-        String url  = (String) ctx.getAttribute("db.url");
-        String user = (String) ctx.getAttribute("db.user");
-        String pass = (String) ctx.getAttribute("db.pass");
-
-        cnx = DriverManager.getConnection(url, user, pass);
-        ctx.setAttribute("db.cnx", cnx);
-        return cnx;
+        finally
+        {
+            try
+            {
+                cnx.close();
+            }
+            catch(Exception e)
+            {
+                System.out.println("Erreur lors de la fermeture d’une connexion ");
+            }
+        }
     }
 }
