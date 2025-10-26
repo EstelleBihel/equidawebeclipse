@@ -1,4 +1,4 @@
-package database;
+package dao;
 
 import model.Cheval;
 import model.Race;
@@ -54,9 +54,8 @@ public class DaoCheval {
         return lesChevaux;
     }
 
-    /**
-     * Récupère un cheval par son identifiant
-     */
+ 
+     //Récupère un cheval par son identifiant
     public static Cheval getLeCheval(Connection cnx, int idCheval) {
         if (cnx == null) throw new IllegalArgumentException("Connexion nulle (cnx).");
 
@@ -75,9 +74,7 @@ public class DaoCheval {
         return cheval;
     }
 
-    /**
-     * Ajoute un nouveau cheval dans la base de données.
-     */
+    //Ajoute un nouveau cheval dans la base de données.
     public static boolean ajouterCheval(Connection cnx, Cheval cheval) {
         if (cnx == null) throw new IllegalArgumentException("Connexion nulle (cnx).");
         if (cheval == null) throw new IllegalArgumentException("Cheval null.");

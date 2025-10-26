@@ -1,8 +1,9 @@
-package database;
+package dao;
 
 import model.Vente;
 import model.Lieu;
 import model.Lot;
+import model.Cheval;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -156,4 +157,53 @@ public class DaoVente {
 
         return vente;
     }
+    
+
+	public static Vente getLaVente(Connection cnx, int idVente) {
+
+		return null;
+	}
+
+	public static ArrayList<Lot> getLotsByVenteId(Connection cnx, int idVente) {
+
+		return null;	
+
+	}
+    
+	public static ArrayList<Lot> getLesLotsDeVente(Connection cnx, int idVente) {
+	    ArrayList<Lot> lesLots = new ArrayList<>();
+
+	    try {
+	        String sql = "SELECT l.id AS lot_id, l.prix_depart, c.id AS cheval_id, c.nom AS cheval_nom " +
+	                     "FROM lot l " +
+	                     "LEFT JOIN cheval c ON l.cheval_id = c.id " +
+	                     "WHERE l.vente_id = ?";
+
+	        PreparedStatement pstmt = cnx.prepareStatement(sql);
+	        pstmt.setInt(1, idVente);
+	        ResultSet rs = pstmt.executeQuery();
+
+	        while (rs.next()) {
+	            Lot unLot = new Lot();
+	            unLot.setId(rs.getInt("lot_id"));
+	            unLot.setPrixDepart(rs.getFloat("prix_depart"));
+
+	            Cheval leCheval = new Cheval();
+	            leCheval.setId(rs.getInt("cheval_id"));
+	            leCheval.setNom(rs.getString("cheval_nom"));
+	            unLot.setCheval(leCheval);
+
+	            lesLots.add(unLot);
+	        }
+
+	        rs.close();
+	        pstmt.close();
+
+	    } catch (SQLException e) {
+	        System.out.println("Erreur DaoVente.getLesLotsDeVente : " + e.getMessage());
+	    }
+
+	    return lesLots;
+	}
+
 }

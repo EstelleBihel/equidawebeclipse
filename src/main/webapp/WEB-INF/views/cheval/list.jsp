@@ -1,3 +1,4 @@
+
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="model.Cheval" %>
 <%@ page import="model.Race" %>
@@ -53,7 +54,7 @@
                         <tr>
                             <th>id</th>
                             <th>nom</th>
-                            <th>pays</th>
+                            <th>race</th>
                         </tr>
                     </thead>
                     <tbody>

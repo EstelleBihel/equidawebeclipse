@@ -1,83 +1,103 @@
 package servlet;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import database.DaoCheval;
-import database.DaoRace;
+import dao.DaoCheval;
+import dao.DaoRace;
+import database.Connexionbdd;
 import model.Cheval;
 import model.Race;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
-@WebServlet(name = "chevalServlet", value = "/cheval-servlet/*")
+// Servlet gérant les opérations liées aux chevaux
 public class ChevalServlet extends HttpServlet {
 
+    private Connection cnx;
+
     @Override
-    public void init() {
-        // Log simple : vérifie que la connexion est bien déposée par le listener
-        Connection cnx = (Connection) getServletContext().getAttribute("cnx");
-        System.out.println("[INIT ChevalServlet] cnx est null ? " + (cnx == null));
+    public void init() throws ServletException {
+        super.init();
+        try {
+            cnx = Connexionbdd.ouvrirConnexion();
+            if (cnx == null) {
+                throw new ServletException("Echec ouverture BDD (cnx == null)");
+            }
+            System.out.println(">>> ChevalServlet.init : connexion OK = " + cnx);
+        } catch (SQLException e) {
+            throw new ServletException("Impossible d'ouvrir la connexion BDD dans ChevalServlet.init()", e);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        Connexionbdd.fermerConnexion(cnx);
+        System.out.println(">>> ChevalServlet.destroy : connexion fermée.");
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
 
-        // 1) Connexion à CHAQUE requête
-        Connection cnx = (Connection) getServletContext().getAttribute("cnx");
-        if (cnx == null) {
-            throw new ServletException("Connexion DB absente du contexte (attribut 'cnx').");
+        String path = request.getPathInfo();
+
+        if (path == null || "/".equals(path)) {
+            response.sendRedirect(request.getContextPath() + "/cheval-servlet/list");
+            return;
         }
 
-        // 2) Normalisation du path => liés aux .jsp dans /WEB-INF/views/cheval/
-        String path = request.getPathInfo();
-        if (path == null || path.isBlank()) path = "/list";
-
         switch (path) {
-            case "/list" -> {
+        	// /cheval-servlet/list
+            case "/list": {
                 ArrayList<Cheval> lesChevaux = DaoCheval.getLesChevaux(cnx);
                 request.setAttribute("pLesChevaux", lesChevaux);
-                getServletContext()
+
+                this.getServletContext()
                         .getRequestDispatcher("/WEB-INF/views/cheval/list.jsp")
                         .forward(request, response);
+                break;
             }
-
-            case "/show" -> {
+            // /cheval-servlet/show
+            case "/show": {
                 try {
-                    String idParam = request.getParameter("idCheval");
-                    int idCheval = Integer.parseInt(idParam);
+                    int idCheval = Integer.parseInt(request.getParameter("idCheval"));
                     Cheval leCheval = DaoCheval.getLeCheval(cnx, idCheval);
+
                     if (leCheval != null) {
                         request.setAttribute("pLeCheval", leCheval);
-                        getServletContext()
+                        this.getServletContext()
                                 .getRequestDispatcher("/WEB-INF/views/cheval/show.jsp")
                                 .forward(request, response);
                     } else {
-                        // Si l'id n'existe pas → retour liste
                         response.sendRedirect(request.getContextPath() + "/cheval-servlet/list");
                     }
                 } catch (NumberFormatException e) {
-                    // idCheval manquant ou invalide
                     response.sendRedirect(request.getContextPath() + "/cheval-servlet/list");
                 }
+                break;
             }
-
-            case "/add" -> {
+			// /cheval-servlet/add
+            case "/add": {
                 ArrayList<Race> lesRaces = DaoRace.getLesRaces(cnx);
                 request.setAttribute("pLesRaces", lesRaces);
-                getServletContext()
+
+                this.getServletContext()
                         .getRequestDispatcher("/WEB-INF/views/cheval/add.jsp")
                         .forward(request, response);
+                break;
             }
 
-            default -> response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            default: {
+                response.sendRedirect(request.getContextPath() + "/cheval-servlet/list");
+                break;
+            }
         }
     }
 
@@ -85,71 +105,66 @@ public class ChevalServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        Connection cnx = (Connection) getServletContext().getAttribute("cnx");
-        if (cnx == null) {
-            throw new ServletException("Connexion DB absente du contexte (attribut 'cnx').");
-        }
-
         String path = request.getPathInfo();
-        if (path == null) path = "";
+        if (path == null) {
+            response.sendRedirect(request.getContextPath() + "/cheval-servlet/list");
+            return;
+        }
+        
+        switch (path) {
+            case "/add": {
+                try {
+                    String nom = request.getParameter("nom");
+                    String dateNaissanceStr = request.getParameter("dateNaissance");
+                    int raceId = Integer.parseInt(request.getParameter("race"));
 
-        if ("/add".equals(path)) {
-            try {
-                // Récupération des champs du formulaire
-                String nom = request.getParameter("nom");
-                String dateNaissanceStr = request.getParameter("dateNaissance");
-                String raceIdStr = request.getParameter("race");
+                    Cheval nouveauCheval = new Cheval();
+                    nouveauCheval.setNom(nom);
 
-                // Validation basique
-                if (nom == null || nom.isBlank() || raceIdStr == null || raceIdStr.isBlank()) {
-                    throw new IllegalArgumentException("Nom et race sont obligatoires.");
+                    if (dateNaissanceStr != null && !dateNaissanceStr.isEmpty()) {
+                        LocalDate dateNaissance = LocalDate.parse(dateNaissanceStr);
+                        nouveauCheval.setDateNaissance(dateNaissance);
+                    }
+
+                    Race race = DaoRace.getRaceById(cnx, raceId);
+                    if (race != null) {
+                        nouveauCheval.setRace(race);
+                    } else {
+                        throw new Exception("La race sélectionnée n'existe pas");
+                    }
+
+                    boolean ok = DaoCheval.ajouterCheval(cnx, nouveauCheval);
+                    if (ok) {
+                        response.sendRedirect(
+                                request.getContextPath()
+                                        + "/cheval-servlet/show?idCheval="
+                                        + nouveauCheval.getId()
+                        );
+                    } else {
+                        throw new Exception("Erreur lors de l'enregistrement du cheval");
+                    }
+
+                } catch (NumberFormatException e) {
+                    request.setAttribute("message", "Race invalide");
+                    request.setAttribute("pLesRaces", DaoRace.getLesRaces(cnx));
+                    this.getServletContext()
+                            .getRequestDispatcher("/WEB-INF/views/cheval/add.jsp")
+                            .forward(request, response);
+
+                } catch (Exception e) {
+                    request.setAttribute("message", "Erreur : " + e.getMessage());
+                    request.setAttribute("pLesRaces", DaoRace.getLesRaces(cnx));
+                    this.getServletContext()
+                            .getRequestDispatcher("/WEB-INF/views/cheval/add.jsp")
+                            .forward(request, response);
                 }
-
-                int raceId = Integer.parseInt(raceIdStr);
-
-                // Construction de l'entité
-                Cheval nouveauCheval = new Cheval();
-                nouveauCheval.setNom(nom);
-
-                if (dateNaissanceStr != null && !dateNaissanceStr.isBlank()) {
-                    // Attendu au format ISO (yyyy-MM-dd) si input type="date"
-                    LocalDate dateNaissance = LocalDate.parse(dateNaissanceStr);
-                    nouveauCheval.setDateNaissance(dateNaissance);
-                }
-
-                // Récupération de la race
-                Race race = DaoRace.getRaceById(cnx, raceId);
-                if (race == null) {
-                    throw new IllegalArgumentException("La race sélectionnée n'existe pas.");
-                }
-                nouveauCheval.setRace(race);
-
-                // Insertion
-                boolean ok = DaoCheval.ajouterCheval(cnx, nouveauCheval);
-                if (!ok) {
-                    throw new RuntimeException("Erreur lors de l'enregistrement du cheval.");
-                }
-
-                // Redirection vers la page détail du nouveau cheval
-                response.sendRedirect(request.getContextPath()
-                        + "/cheval-servlet/show?idCheval=" + nouveauCheval.getId());
-
-            } catch (NumberFormatException e) {
-                request.setAttribute("message", "Erreur : la race sélectionnée n'est pas valide.");
-                request.setAttribute("pLesRaces", DaoRace.getLesRaces(cnx));
-                getServletContext()
-                        .getRequestDispatcher("/WEB-INF/views/cheval/add.jsp")
-                        .forward(request, response);
-
-            } catch (Exception e) {
-                request.setAttribute("message", "Erreur : " + e.getMessage());
-                request.setAttribute("pLesRaces", DaoRace.getLesRaces(cnx));
-                getServletContext()
-                        .getRequestDispatcher("/WEB-INF/views/cheval/add.jsp")
-                        .forward(request, response);
+                break;
             }
-        } else {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+
+            default: {
+                response.sendRedirect(request.getContextPath() + "/cheval-servlet/list");
+                break;
+            }
         }
     }
 }
